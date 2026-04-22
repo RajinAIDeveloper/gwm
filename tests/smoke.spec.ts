@@ -33,6 +33,18 @@ test.describe("lean MVP smoke", () => {
     await expect(page.getByRole("heading", { name: /sign in to garment waste marketplace/i })).toBeVisible();
   });
 
+  test("anonymous users are redirected away from buyer inquiry routes", async ({ page }) => {
+    await page.goto("/inquiries");
+    await page.waitForURL(/\/sign-in\?next=%2Finquiries$/);
+    await expect(page.getByRole("heading", { name: /sign in to garment waste marketplace/i })).toBeVisible();
+  });
+
+  test("anonymous users are redirected away from buyer saved routes", async ({ page }) => {
+    await page.goto("/wishlist");
+    await page.waitForURL(/\/sign-in\?next=%2Fwishlist$/);
+    await expect(page.getByRole("heading", { name: /sign in to garment waste marketplace/i })).toBeVisible();
+  });
+
   test("public browse route is accessible when Supabase is configured", async ({ page }) => {
     test.skip(!hasConfiguredSupabase, "Supabase env is not configured for runtime route validation.");
 

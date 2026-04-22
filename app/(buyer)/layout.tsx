@@ -9,9 +9,9 @@ type BuyerLayoutProps = {
 
 export default function BuyerLayout({ children }: BuyerLayoutProps) {
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,rgba(250,250,249,0.9),rgba(255,255,255,1))]">
+    <div className="market-shell">
       <AppHeader />
-      <main className="flex-1 pb-16 pt-8">{children}</main>
+      <main className="relative z-10 flex-1 pb-20 pt-6 sm:pt-8 lg:pt-10">{children}</main>
       <SiteFooter />
     </div>
   );

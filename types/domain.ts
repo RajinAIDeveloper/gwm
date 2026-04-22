@@ -36,6 +36,8 @@ export interface ListingSummary {
   id: string;
   sellerId: string;
   sellerName: string;
+  sellerRatingAverage: number | null;
+  sellerRatingCount: number;
   title: string;
   description: string;
   category: ListingCategory;
@@ -49,17 +51,40 @@ export interface ListingDetail extends ListingSummary {
   imageUrls: string[];
   updatedAt: string;
   viewerOwnsListing: boolean;
+  viewerHasWishlisted: boolean;
+  viewerFollowsSeller: boolean;
+  viewerSellerRating: number | null;
 }
 
-export interface Inquiry {
+export interface InquirySummary {
   id: string;
   listingId: string;
   listingTitle: string;
+  sellerId: string;
+  sellerName: string;
   buyerId: string;
   buyerName: string;
   buyerEmail: string;
+  latestMessage: string;
+  latestMessageAt: string;
+  createdAt: string;
+  unread: boolean;
+}
+
+export interface InquiryMessage {
+  id: string;
+  inquiryId: string;
+  senderId: string;
+  senderRole: "seller" | "buyer";
+  senderName: string;
   message: string;
   createdAt: string;
+}
+
+export interface InquiryThread extends InquirySummary {
+  sellerLastReadAt: string | null;
+  buyerLastReadAt: string | null;
+  messages: InquiryMessage[];
 }
 
 export interface ListingFilters {
@@ -91,6 +116,27 @@ export interface UpdateListingInput extends CreateListingInput {
 export interface InquiryInput {
   listingId: string;
   message: string;
+}
+
+export interface InquiryReplyInput {
+  inquiryId: string;
+  message: string;
+}
+
+export interface FollowedSellerSummary {
+  id: string;
+  displayName: string;
+  ratingAverage: number | null;
+  ratingCount: number;
+  activeListingCount: number;
+}
+
+export interface BuyerListingEngagementState {
+  listingId: string;
+  sellerId: string;
+  hasWishlisted: boolean;
+  followsSeller: boolean;
+  sellerRating: number | null;
 }
 
 export type FieldErrors = Partial<Record<string, string>>;

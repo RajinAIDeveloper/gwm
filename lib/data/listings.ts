@@ -1,9 +1,10 @@
 import { randomUUID } from "crypto";
 
+import { getSellerRatingStatsMap } from "@/lib/data/engagement";
 import { LISTING_IMAGES_BUCKET } from "@/lib/supabase/config";
 import { createSupabaseServerClient, getListingImageUrl } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
-import type { CreateListingInput, ListingDetail, ListingFilters, ListingSummary, UpdateListingInput } from "@/types/domain";
+import type { BuyerListingEngagementState, CreateListingInput, ListingDetail, ListingFilters, ListingSummary, UpdateListingInput } from "@/types/domain";
 
 type ListingRow = Database["public"]["Tables"]["listings"]["Row"];
 
@@ -18,11 +19,16 @@ function parseNumericValue(value: string) {
   return Number.parseFloat(value);
 }
 
-function toSummary(row: ListingWithSellerRow): ListingSummary {
+function toSummary(
+  row: ListingWithSellerRow,
+  sellerRating: { average: number | null; count: number },
+): ListingSummary {
   return {
     id: row.id,
     sellerId: row.seller_id,
     sellerName: row.seller?.display_name ?? "Verified seller",
+    sellerRatingAverage: sellerRating.average,
+    sellerRatingCount: sellerRating.count,
     title: row.title,
     description: row.description,
     category: row.category as ListingSummary["category"],
@@ -33,14 +39,22 @@ function toSummary(row: ListingWithSellerRow): ListingSummary {
   };
 }
 
-function toDetail(row: ListingWithSellerRow, viewerId?: string): ListingDetail {
-  const summary = toSummary(row);
+function toDetail(
+  row: ListingWithSellerRow,
+  sellerRating: { average: number | null; count: number },
+  viewerId?: string,
+  engagement?: BuyerListingEngagementState,
+): ListingDetail {
+  const summary = toSummary(row, sellerRating);
 
   return {
     ...summary,
     imageUrls: row.image_paths.map((path) => getListingImageUrl(path)),
     updatedAt: row.updated_at,
     viewerOwnsListing: viewerId === row.seller_id,
+    viewerHasWishlisted: engagement?.hasWishlisted ?? false,
+    viewerFollowsSeller: engagement?.followsSeller ?? false,
+    viewerSellerRating: engagement?.sellerRating ?? null,
   };
 }
 
@@ -97,12 +111,30 @@ export async function getPublicListings(filters: ListingFilters = {}) {
     throw new Error(error.message);
   }
 
-  return (data as ListingWithSellerRow[]).map(toSummary);
+  const rows = data as ListingWithSellerRow[];
+  const sellerRatingMap = await getSellerRatingStatsMap([...new Set(rows.map((row) => row.seller_id))]);
+
+  return rows.map((row) => toSummary(row, sellerRatingMap.get(row.seller_id) ?? { average: null, count: 0 }));
 }
 
-export async function getListingById(id: string, viewerId?: string) {
+export async function getListingById(
+  id: string,
+  viewerId?: string,
+  engagement?: BuyerListingEngagementState,
+) {
   const row = await fetchListingById(id);
-  return row ? toDetail(row, viewerId) : null;
+  if (!row) {
+    return null;
+  }
+
+  const sellerRatingMap = await getSellerRatingStatsMap([row.seller_id]);
+
+  return toDetail(
+    row,
+    sellerRatingMap.get(row.seller_id) ?? { average: null, count: 0 },
+    viewerId,
+    engagement,
+  );
 }
 
 export async function getSellerListings(sellerId: string, accessToken: string) {
@@ -125,7 +157,10 @@ export async function getSellerListings(sellerId: string, accessToken: string) {
     throw new Error(error.message);
   }
 
-  return (data as ListingWithSellerRow[]).map(toSummary);
+  const rows = data as ListingWithSellerRow[];
+  const sellerRatingMap = await getSellerRatingStatsMap([...new Set(rows.map((row) => row.seller_id))]);
+
+  return rows.map((row) => toSummary(row, sellerRatingMap.get(row.seller_id) ?? { average: null, count: 0 }));
 }
 
 function buildStoragePath(sellerId: string, file: File) {

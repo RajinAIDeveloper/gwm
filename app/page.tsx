@@ -4,9 +4,9 @@ import { SiteFooter } from "@/components/shared/site-footer";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,rgba(245,245,244,0.7),rgba(255,255,255,1))]">
+    <div className="market-shell">
       <AppHeader />
-      <main className="flex-1">
+      <main className="relative z-10 flex-1">
         <MarketingLandingPage />
       </main>
       <SiteFooter />

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef } from "react";
 
 import { submitInquiry } from "@/app/actions/inquiries";
@@ -14,9 +15,10 @@ type BuyerInquiryPanelProps = {
   listingId: string;
   viewerOwnsListing: boolean;
   viewerRole?: AppRole;
+  existingInquiryId?: string | null;
 };
 
-const initialState: ActionResult = {
+const initialState: ActionResult<{ id: string }> = {
   ok: false,
 };
 
@@ -28,15 +30,26 @@ export function BuyerInquiryPanel({
   listingId,
   viewerOwnsListing,
   viewerRole,
+  existingInquiryId,
 }: BuyerInquiryPanelProps) {
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
-  const [state, formAction, isPending] = useActionState(submitInquiry, initialState);
+  const [state, formAction, isPending] = useActionState<ActionResult<{ id: string }>, FormData>(
+    submitInquiry,
+    initialState,
+  );
 
   useEffect(() => {
     if (state.ok) {
       formRef.current?.reset();
     }
   }, [state.ok]);
+
+  useEffect(() => {
+    if (state.ok && state.redirectTo) {
+      router.push(state.redirectTo);
+    }
+  }, [router, state.ok, state.redirectTo]);
 
   if (!viewerRole) {
     return (
@@ -94,10 +107,29 @@ export function BuyerInquiryPanel({
     );
   }
 
+  if (existingInquiryId) {
+    return (
+      <ListingFormSection
+        description="You already contacted this seller for this listing. Open the conversation to continue."
+        title="Inquiry in progress"
+      >
+        <div className="space-y-4">
+          <Badge>Existing conversation</Badge>
+          <p className="text-sm leading-6 text-muted-foreground">
+            Continue the thread to review seller replies and send follow-up messages without starting a duplicate inquiry.
+          </p>
+          <Button asChild>
+            <Link href={`/inquiries/${existingInquiryId}`}>Open conversation</Link>
+          </Button>
+        </div>
+      </ListingFormSection>
+    );
+  }
+
   return (
     <ListingFormSection
-      description="Send one concise message with your quantity needs, timing, and pickup or shipping expectations."
-      title="Send inquiry"
+      description="Start a conversation with one concise message about quantity needs, timing, and pickup or shipping expectations."
+      title="Start conversation"
     >
       <form action={formAction} className="space-y-4" ref={formRef}>
         <input name="listingId" type="hidden" value={listingId} />
@@ -126,7 +158,7 @@ export function BuyerInquiryPanel({
         </label>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">Single-message inquiry only. No threaded follow-up is included in this MVP.</p>
+          <p className="text-sm text-muted-foreground">This creates a conversation thread that both buyer and seller can reply to.</p>
           <Button disabled={isPending} size="lg" type="submit">
             {isPending ? "Sending..." : "Send inquiry"}
           </Button>

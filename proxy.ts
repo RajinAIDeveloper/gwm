@@ -18,6 +18,12 @@ export async function proxy(request: NextRequest) {
   const { response, sessionUser } = await getMiddlewareSession(request);
   const pathname = request.nextUrl.pathname;
   const isSellerRoute = pathname === "/seller" || pathname.startsWith("/seller/");
+  const isBuyerInquiryRoute = pathname === "/inquiries" || pathname.startsWith("/inquiries/");
+  const isBuyerSavedRoute =
+    pathname === "/wishlist" ||
+    pathname.startsWith("/wishlist/") ||
+    pathname === "/following" ||
+    pathname.startsWith("/following/");
   const isAuthRoute = AUTH_ROUTES.has(pathname);
 
   if (isSellerRoute && !sessionUser) {
@@ -34,6 +40,26 @@ export async function proxy(request: NextRequest) {
     }
 
     return redirectWithResponse(new URL(getDefaultRouteForRole(sessionUser.role), request.url), response);
+  }
+
+  if (isBuyerInquiryRoute && !sessionUser) {
+    const redirectUrl = new URL(SIGN_IN_ROUTE, request.url);
+    redirectUrl.searchParams.set("next", pathname);
+    return redirectWithResponse(redirectUrl, response);
+  }
+
+  if (isBuyerInquiryRoute && sessionUser?.role !== "buyer") {
+    return redirectWithResponse(new URL(getDefaultRouteForRole(sessionUser!.role), request.url), response);
+  }
+
+  if (isBuyerSavedRoute && !sessionUser) {
+    const redirectUrl = new URL(SIGN_IN_ROUTE, request.url);
+    redirectUrl.searchParams.set("next", pathname);
+    return redirectWithResponse(redirectUrl, response);
+  }
+
+  if (isBuyerSavedRoute && sessionUser?.role !== "buyer") {
+    return redirectWithResponse(new URL(getDefaultRouteForRole(sessionUser!.role), request.url), response);
   }
 
   if (isAuthRoute && sessionUser) {

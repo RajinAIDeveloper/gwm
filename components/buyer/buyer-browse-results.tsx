@@ -32,16 +32,16 @@ export function BuyerBrowseResults({ listings, search, category }: BuyerBrowseRe
   }
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <section className="space-y-5">
+      <div className="market-surface flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="flex flex-wrap gap-2">
           <Badge variant="secondary">{listings.length} results</Badge>
           {search ? <Badge variant="outline">Search: {search}</Badge> : null}
         </div>
-        <p className="text-sm text-muted-foreground">Open a listing to review details and send one inquiry.</p>
+        <p className="text-sm text-muted-foreground">Open a listing to review details, save it, or start a supplier thread.</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {listings.map((listing) => (
           <ListingCard key={listing.id} listing={listing} />
         ))}

@@ -9,9 +9,10 @@ import type { ListingSummary } from "@/types/domain";
 type SellerDashboardContentProps = {
   displayName: string;
   listings: ListingSummary[];
+  unreadInquiryCount: number;
 };
 
-function SellerDashboardContent({ displayName, listings }: SellerDashboardContentProps) {
+function SellerDashboardContent({ displayName, listings, unreadInquiryCount }: SellerDashboardContentProps) {
   return (
     <div className="space-y-8">
       <section className="rounded-[2rem] border border-border/70 bg-card px-6 py-8 shadow-sm">
@@ -23,6 +24,12 @@ function SellerDashboardContent({ displayName, listings }: SellerDashboardConten
               <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
                 {displayName}, publish material listings, keep pricing current, and review buyer inquiries from one lean dashboard.
               </p>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary">{listings.length} active listings</Badge>
+                <Badge variant={unreadInquiryCount > 0 ? "default" : "outline"}>
+                  {unreadInquiryCount} unread inquiries
+                </Badge>
+              </div>
             </div>
           </div>
 
